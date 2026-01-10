@@ -78,14 +78,12 @@ fi
 
 PACKAGE_LIST=("System Utilities" "Dev Tools" "Media" "Office" "Fonts" "Flatpaks" "Services" "Dotfiles")
 
-PACKAGE_CHOICE=$(gum choose --header "Please select which packages to install:" --no-limit "${PACKAGE_LIST[@]}")
+PACKAGE_CHOICE=$(gum choose --header "please select which packages to install:" --no-limit "${PACKAGE_LIST[@]}")
 
 gum confirm "Are you sure you want to install these packages? $(gum style --foreground 212 '' "$PACKAGE_CHOICE")" \
   --affirmative "Lets Fucking Go Dude" \
   --negative "I'm outta here homie"
 
-
-# echo "$PACKAGE_CHOICE"
 
 while IFS= read -r line; do
   case "$line" in
@@ -130,6 +128,8 @@ while IFS= read -r line; do
           echo "$service is already enabled"
         fi
       done
+      
+      
       ;;
     
     "Dotfiles")
@@ -139,6 +139,11 @@ while IFS= read -r line; do
 
   esac
 done <<< "$PACKAGE_CHOICE"
+
+SSH_AGENT_CHOICE=$(gum choose --header "Do you want to enable the SSH Agent Service?" --limit 1  "Yes" "No")
+if [ $SSH_AGENT_CHOICE == "Yes" ]; then
+  . ssh_agent/enable_ssh_agent.sh 
+fi
 
 # Completion message <3
 gum style --border normal --margin "1" --padding "1 2" --border-foreground 212 "Done! You may want to $(gum style --foreground 212 'reboot your system')."
