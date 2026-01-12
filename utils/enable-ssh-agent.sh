@@ -1,13 +1,13 @@
 #!/bin/bash
 
 if [ "$1" == "--use-zsh" ]; then
-  echo "Using zsh because of dotfiles install"
+  gum style --foreground 141 "Using zsh because of dotfiles install"
   USE_ZSH=true
 else
   USE_ZSH=false
 fi
 
-install -D utils/ssh-agent.service ~/.config/systemd/user/ssh-agent.service
+gum spin --title "Installing ssh-agent service..." -- install -D utils/ssh-agent.service ~/.config/systemd/user/ssh-agent.service
 
 ###############################################################
 # Add environment variable to user's shell configuration file #
@@ -52,20 +52,20 @@ add_ssh_agent_to_shell_config() {
             EXPORT_LINE='setenv SSH_AUTH_SOCK "$XDG_RUNTIME_DIR/ssh-agent.socket"'
             ;;
         *)
-            echo "Unsupported shell: $USER_SHELL"
-            echo "Supported shells: bash, zsh, fish, ksh, mksh, tcsh, csh"
+            gum style --foreground 196 "Unsupported shell: $USER_SHELL"
+            gum style --foreground 196 "Supported shells: bash, zsh, fish, ksh, mksh, tcsh, csh"
             return 1
             ;;
     esac
 
-    echo "Detected shell: $USER_SHELL"
-    echo "Configuration file: $RC_FILE"
+    gum style --foreground 141 "Detected shell: $USER_SHELL"
+    gum style --foreground 141 "Configuration file: $RC_FILE"
 
     # Create parent directory if needed (for fish)
     RC_DIR=$(dirname "$RC_FILE")
     if [[ ! -d "$RC_DIR" ]]; then
         mkdir -p "$RC_DIR"
-        echo "Created directory: $RC_DIR"
+        gum style --foreground 141 "Created directory: $RC_DIR"
     fi
 
     # Create RC file if it doesn't exist
@@ -75,13 +75,13 @@ $BEGIN_MARKER
 $EXPORT_LINE
 $END_MARKER
 EOF
-        echo "Created $RC_FILE with SSH agent configuration"
+        gum style --foreground 141 "Created $RC_FILE with SSH agent configuration"
         return 0
     fi
 
     # Check if our block already exists
     if grep -qF "$BEGIN_MARKER" "$RC_FILE"; then
-        echo "SSH agent configuration already exists in $RC_FILE"
+        gum style --foreground 141 "SSH agent configuration already exists in $RC_FILE"
         return 0
     fi
 
@@ -98,7 +98,7 @@ EOF
             }
             {print}
         ' "$RC_FILE" > "$RC_FILE.tmp" && mv "$RC_FILE.tmp" "$RC_FILE"
-        echo "Inserted SSH agent configuration before prompt theme in $RC_FILE"
+        gum style --foreground 141 "Inserted SSH agent configuration before prompt theme in $RC_FILE"
     else
         cat >> "$RC_FILE" << EOF
 
@@ -106,10 +106,10 @@ $BEGIN_MARKER
 $EXPORT_LINE
 $END_MARKER
 EOF
-        echo "Appended SSH agent configuration to $RC_FILE"
+        gum style --foreground 141 "Appended SSH agent configuration to $RC_FILE"
     fi
 
-    echo "SSH agent configuration successfully added to $RC_FILE"
+    gum style --foreground 141 "SSH agent configuration successfully added to $RC_FILE"
     return 0
 }
 
@@ -118,7 +118,7 @@ add_ssh_agent_to_shell_config
 
 # Check if the function succeeded
 if [[ $? -ne 0 ]]; then
-    echo "Failed to configure shell RC file"
+    gum style --foreground 196 "Failed to configure shell RC file"
     exit 1
 fi
 
@@ -133,11 +133,11 @@ edit_ssh_config() {
   # Create directory if doesn't exist
   if [[ ! -d "$SSH_DIR" ]]; then
     mkdir $SSH_DIR
-    echo "Created '~/.ssh' directory"
+    gum style --foreground 141 "Created '~/.ssh' directory"
   fi
 
   if [[ $? -ne 0 ]]; then
-    echo "Failed to make ssh directory"
+    gum style --foreground 196 "Failed to make ssh directory"
     return 1
   fi
 
@@ -146,14 +146,14 @@ edit_ssh_config() {
     cat > "$SSH_CONFIG_PATH" << EOF
 $SSH_CONFIG_LINE
 EOF
-    echo "Created $SSH_CONFIG_PATH file"
+    gum style --foreground 141 "Created $SSH_CONFIG_PATH file"
     return 0
   else
     cat >> "$SSH_CONFIG_PATH" << EOF
 
 $SSH_CONFIG_LINE
 EOF
-    echo "Appended $SSH_CONFIG_PATH file"
+    gum style --foreground 141 "Appended to $SSH_CONFIG_PATH file"
     return 0
   fi
 }
@@ -162,19 +162,21 @@ edit_ssh_config
 
 # Check if the function succeeded
 if [[ $? -ne 0 ]]; then
-    echo "Failed to edit ssh config"
+    gum style --foreground 196 "Failed to edit ssh config"
     exit 1
 fi
 
 # Enable custom ssh-agent service for user only (does not need sudo)
-systemctl --user enable ssh-agent
+gum spin --title "Enabling ssh-agent service..." -- systemctl --user enable ssh-agent
 if [[ $? -ne 0 ]]; then
-    echo "Failed to enable ssh-agent"
+    gum style --foreground 196 "Failed to enable ssh-agent"
     exit 1
 fi
 
-systemctl --user start ssh-agent
+gum spin --title "Starting ssh-agent service..." -- systemctl --user start ssh-agent
 if [[ $? -ne 0 ]]; then
-    echo "Failed to start ssh-agent"
+    gum style --foreground 196 "Failed to start ssh-agent"
     exit 1
 fi
+
+gum style --foreground 141 --bold "SSH agent successfully configured!"
