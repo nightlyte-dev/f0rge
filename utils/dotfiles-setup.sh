@@ -3,6 +3,10 @@
 # ORIGINAL_DIR=$(pwd)
 REPO_URL="https://github.com/nightlyte-dev/dotfiles"
 REPO_NAME="dotfiles"
+CONFIG_DIR="~/.config"
+ZSHRC_DIR="~/.zshrc"
+NVIM_DIR="$CONFIG_DIR/nvim"
+STARSHIP_DIR="$CONFIG_DIR/starship.toml"
 set -e
 
 is_stow_installed() {
@@ -25,7 +29,7 @@ git clone --depth=1 https://github.com/zsh-users/zsh-syntax-highlighting "$PLUGI
 cd ~
 
 # Check if the repository already exists
-if [ -d "$REPO_NAME" ]; then
+if [[ -d "$REPO_NAME" ]]; then
   echo "Repository '$REPO_NAME' already exists. Skipping clone"
 else
   git clone "$REPO_URL"
@@ -42,17 +46,17 @@ fi
 # git restore .
 
 # Backing up and renaming files if they exist so stow will work
-if [ -f ~/.zshrc ]; then
+if [[ -f "$ZSHRC_DIR" ]]; then
   echo "'~/.zshrc' already exists, creating '~/.zshrc.bak'"
   mv ~/.zshrc ~/.zshrc.bak
 fi
 
-if [ -d ~/.config/nvim ]; then
+if [[ -d "$NVIM_DIR" ]]; then
   echo "'~/.config/nvim' already existing, creating '~/.config/nvim.bak'"
   mv ~/.config/nvim/ ~/.config/nvim.bak/
 fi
 
-if [ -f ~/.config/starship.toml]; then
+if [[ -f "$STARSHIP_DIR" ]]; then
   echo "'~/.config/starship.toml' already exists, creating '~/.config/starship.toml.bak'"
   mv ~/.config/starship.toml ~/.config/starship.toml.bak
 fi
@@ -62,5 +66,7 @@ stow zshrc
 stow nvim
 stow starship
 
-echo "Dotfiles have been installed!!\n\nYou may want to reload your shell apply changes."
+chsh -s $(which zsh)
+
+echo -e "Dotfiles have been installed!!\n\nYou may want to reload your shell apply changes."
 

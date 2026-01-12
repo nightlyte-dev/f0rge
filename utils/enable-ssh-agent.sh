@@ -113,30 +113,36 @@ fi
 
 
 ###############################################################
-
 # Add line to SSH config file
 edit_ssh_config() {
   SSH_CONFIG_LINE="AddKeysToAgent    yes"
+  SSH_DIR="$HOME/.ssh"
+  SSH_CONFIG_PATH="$SSH_DIR/config"
 
   # Create directory if doesn't exist
-  if [ ! -d "~/.ssh" ]; then
-    mkdir ~/.ssh
+  if [[ ! -d "$SSH_DIR" ]]; then
+    mkdir $SSH_DIR
     echo "Created '~/.ssh' directory"
   fi
 
+  if [[ $? -ne 0 ]]; then
+    echo "Failed to make ssh directory"
+    return 1
+  fi
+
   # Create config file if doesn't exist
-  if [ ! -f "~/.ssh/config"]; then
-    cat > "~/.ssh/config" << EOF
+  if [[ ! -f "$SSH_CONFIG_PATH" ]]; then
+    cat > "$SSH_CONFIG_PATH" << EOF
 $SSH_CONFIG_LINE
 EOF
-    echo "Created '~/.ssh/config' file"
+    echo "Created $SSH_CONFIG_PATH file"
     return 0
   else
-    cat >> "~/.ssh/config" << EOF
+    cat >> "$SSH_CONFIG_PATH" << EOF
 
 $SSH_CONFIG_LINE
 EOF
-    echo "Appended '~/.ssh/config' file"
+    echo "Appended $SSH_CONFIG_PATH file"
     return 0
   fi
 }
@@ -148,7 +154,6 @@ if [[ $? -ne 0 ]]; then
     echo "Failed to edit ssh config"
     exit 1
 fi
-
 
 # Enable custom ssh-agent service for user only (does not need sudo)
 systemctl --user enable ssh-agent
