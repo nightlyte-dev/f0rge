@@ -3,8 +3,8 @@
 # ORIGINAL_DIR=$(pwd)
 REPO_URL="https://github.com/nightlyte-dev/dotfiles"
 REPO_NAME="dotfiles"
-CONFIG_DIR="~/.config"
-ZSHRC_DIR="~/.zshrc"
+CONFIG_DIR="$HOME/.config"
+ZSHRC_DIR="$HOME/.zshrc"
 NVIM_DIR="$CONFIG_DIR/nvim"
 STARSHIP_DIR="$CONFIG_DIR/starship.toml"
 set -e
