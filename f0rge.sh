@@ -71,6 +71,8 @@ fi
 
 # Install yay AUR helper if not present
 if ! command -v yay &> /dev/null; then
+  sudo -v
+
   gum spin --title "Getting ready for yay..." -- sudo pacman -S --needed git base-devel --noconfirm
   if [[ ! -d "yay" ]]; then
     gum style --foreground 141 'Beautiful!'
@@ -83,12 +85,15 @@ if ! command -v yay &> /dev/null; then
 
   cd yay
   echo "building yay.... yaaaaayyyyy"
-  makepkg -si --noconfirm
+  gum spin --title "Building yay.... yaaaaayyyyy" -- bash -c 'makepkg -si --noconfirm > /dev/null 2>&1' 
   cd ..
   rm -rf yay
 else
   gum style --foreground 141 'yay is already installed'
 fi
+
+clear
+print_logo
 
 PACKAGE_LIST=("System Utilities" "Dev Tools" "Media" "Office" "Fonts" "Flatpaks" "Services" "Dotfiles")
 
@@ -101,52 +106,48 @@ gum confirm "Are you sure you want to install these packages? $(gum style --fore
 while IFS= read -r line; do
   case "$line" in
     "System Utilities")
-      echo "Installing system utilities..."
+      gum style --foreground 212 --bold "Installing system utilities..."
       install_packages "${SYSTEM_UTILS[@]}"
       ;;
 
     "Dev Tools")
-      echo "Installing development tools..."
+      gum style --foreground 212 --bold "Installing development tools..."
       install_packages "${DEV_TOOLS[@]}"
       ;;
 
     "Media")
-      echo "Installing media packages..."
+      gum style --foreground 212 --bold "Installing media packages..."
       install_packages "${MEDIA[@]}"
       ;;
 
     "Office")
-      echo "Installing office apps..."
+      gum style --foreground 212 --bold "Installing office apps..."
       install_packages "${OFFICE[@]}"
       ;;
 
     "Fonts")
-      echo "Installing fonts..."
+      gum style --foreground 212 --bold "Installing fonts..."
       install_packages "${FONTS[@]}"
       ;;
 
     "Flatpaks")
-      echo "Installing flatpaks (like discord and spotify)"
+      gum style --foreground 212 --bold "Installing flatpaks (like discord and spotify)"
       . utils/install-flatpaks.sh
       ;;
 
     "Services")
-      # Enable services
-      echo "Configuring services..."
+      gum style --foreground 212 --bold "Configuring services..."
       for service in "${SERVICES[@]}"; do
         if ! systemctl is-enabled "$service" &> /dev/null; then
-          echo "Enabling $service..."
-          sudo systemctl enable "$service"
+          gum spin --title "Enabling $service..." -- sudo systemctl enable "$service"
         else
-          echo "$service is already enabled"
+          gum style --foreground 141 "$service is already enabled"
         fi
       done
-      
-      
       ;;
     
     "Dotfiles")
-      echo "Installing dotfiles..."
+      gum style --foreground 212 --bold "Installing dotfiles..."
       DOTFILES_CHOICE=true
       . utils/dotfiles-setup.sh
       ;;
