@@ -1,5 +1,12 @@
 #!/bin/bash
 
+if [ "$1" == "--use-zsh" ]; then
+  echo "Using zsh because of dotfiles install"
+  USE_ZSH=true
+else
+  USE_ZSH=false
+fi
+
 install -D utils/ssh-agent.service ~/.config/systemd/user/ssh-agent.service
 
 ###############################################################
@@ -9,7 +16,11 @@ install -D utils/ssh-agent.service ~/.config/systemd/user/ssh-agent.service
 # Function to add SSH agent configuration to shell RC file
 add_ssh_agent_to_shell_config() {
     # Detect user's default shell
-    USER_SHELL=$(basename "$SHELL")
+    if [ "$USE_ZSH" == true ]; then
+      USER_SHELL="zsh"
+    else
+      USER_SHELL=$(basename "$SHELL")
+    fi
     EXPORT_LINE='export SSH_AUTH_SOCK="$XDG_RUNTIME_DIR/ssh-agent.socket"'
     BEGIN_MARKER="# >>> ssh-agent-setup >>>"
     END_MARKER="# <<< ssh-agent-setup <<<"

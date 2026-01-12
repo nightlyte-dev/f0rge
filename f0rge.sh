@@ -98,7 +98,6 @@ gum confirm "Are you sure you want to install these packages? $(gum style --fore
   --affirmative "Lets Fucking Go Dude" \
   --negative "I'm outta here homie"
 
-
 while IFS= read -r line; do
   case "$line" in
     "System Utilities")
@@ -148,6 +147,7 @@ while IFS= read -r line; do
     
     "Dotfiles")
       echo "Installing dotfiles..."
+      DOTFILES_CHOICE=true
       . utils/dotfiles-setup.sh
       ;;
 
@@ -157,8 +157,12 @@ done <<< "$PACKAGE_CHOICE"
 cd $F0RGE_DIR
 
 SSH_AGENT_CHOICE=$(gum choose --header "Do you want to enable the SSH Agent Service?" --limit 1  "Yes" "No")
-if [ $SSH_AGENT_CHOICE == "Yes" ]; then
-  . utils/enable-ssh-agent.sh
+if [ "$SSH_AGENT_CHOICE" == "Yes" ]; then
+  if [ "$DOTFILES_CHOICE" == true ]; then
+    . utils/enable-ssh-agent.sh --use-zsh
+  else
+    . utils/enable-ssh-agent.sh
+  fi
 fi
 
 # Completion message <3
