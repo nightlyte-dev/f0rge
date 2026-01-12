@@ -61,7 +61,13 @@ fi
 source packages.conf
 
 # Update the system first
-gum spin --title "Updating system..." -- sudo pacman -Syu --noconfirm
+if sudo -n true 2>/dev/null; then
+    # Credentials are cached, no password needed
+    gum spin --title "Updating system..." -- sudo pacman -Syu --noconfirm
+else
+    # Need password
+    gum input --password --placeholder "Please input your password" | sudo -S gum spin --title "Updating system..." -- pacman -Syu --noconfirm
+fi
 
 # Install yay AUR helper if not present
 if ! command -v yay &> /dev/null; then
