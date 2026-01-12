@@ -66,7 +66,14 @@ stow zshrc
 stow nvim
 stow starship
 
-chsh -s $(which zsh)
+
+if sudo -n true 2>/dev/null; then
+    # Credentials are cached, no password needed
+    sudo chsh -s $(which zsh) $USER 
+else
+    # Need password
+    gum input --password --placeholder "Please input your password" | sudo chsh -s $(which zsh) $USER 
+fi
 
 echo -e "Dotfiles have been installed!!\n\nYou may want to reload your shell apply changes."
 
