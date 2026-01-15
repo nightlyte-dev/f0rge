@@ -4,9 +4,11 @@ REPO_URL="https://github.com/nightlyte-dev/dotfiles"
 REPO_NAME="dotfiles"
 CONFIG_DIR="$HOME/.config"
 ZSHRC_DIR="$HOME/.zshrc"
+OMZ_DIR="$HOME/.oh-my-zsh"
+PLUGINS_DIR="$OMZ_DIR/custom/plugins"
 NVIM_DIR="$CONFIG_DIR/nvim"
 STARSHIP_DIR="$CONFIG_DIR/starship.toml"
-set -e
+
 
 is_stow_installed() {
   pacman -Qi "stow" &> /dev/null
@@ -16,21 +18,24 @@ if ! is_stow_installed; then
   gum spin --title "Installing stow..." -- sudo pacman -S stow --noconfirm
 fi
 
-# Install Oh-My-Zsh with '--unattended' flag
-gum spin --title "Installing Oh-My-Zsh..." -- sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
+install_omz() {
+  # Install Oh-My-Zsh with '--unattended' flag
+  sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
+}
 
-PLUGINS_DIR="$HOME/.oh-my-zsh/custom/plugins"
-mkdir -p "$PLUGINS_DIR"
-gum spin --title "Installing zsh-autosuggestions..." -- git clone --depth=1 https://github.com/zsh-users/zsh-autosuggestions "$PLUGINS_DIR/zsh-autosuggestions" 2>&1 | grep -iE '(error|failed|fatal)' || true
-gum spin --title "Installing zsh-syntax-highlighting..." -- git clone --depth=1 https://github.com/zsh-users/zsh-syntax-highlighting "$PLUGINS_DIR/zsh-syntax-highlighting" 2>&1 | grep -iE '(error|failed|fatal)' || true
+install_omz_plugins() {
+  mkdir -p "$PLUGINS_DIR"
+  gum spin --title "Installing zsh-autosuggestions..." -- git clone --depth=1 https://github.com/zsh-users/zsh-autosuggestions "$PLUGINS_DIR/zsh-autosuggestions"
+  gum spin --title "Installing zsh-syntax-highlighting..." -- git clone --depth=1 https://github.com/zsh-users/zsh-syntax-highlighting "$PLUGINS_DIR/zsh-syntax-highlighting"
+}
 
-cd ~
+cd "$HOME"
 
 # Check if the repository already exists
 if [[ -d "$REPO_NAME" ]]; then
   gum style --foreground 141 "Repository '$REPO_NAME' already exists. Skipping clone"
 else
-  gum spin --title "Cloning dotfiles repository..." -- git clone "$REPO_URL" 2>&1 | grep -iE '(error|failed|fatal)' || true
+  gum spin --title "Cloning dotfiles repository..." -- git clone "$REPO_URL"
 fi
 
 # Check if the clone was successful
@@ -47,7 +52,7 @@ fi
 
 if [[ -d "$NVIM_DIR" ]]; then
   gum style --foreground 141 "'~/.config/nvim' already exists, creating '~/.config/nvim.bak'"
-  mv ~/.config/nvim/ ~/.config/nvim.bak/
+  mv ~/.config/nvim ~/.config/nvim.bak/
 fi
 
 if [[ -f "$STARSHIP_DIR" ]]; then
