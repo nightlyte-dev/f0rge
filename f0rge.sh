@@ -3,10 +3,52 @@ set -euo pipefail
 
 F0RGE_DIR="$(pwd)"
 LOG_DIR="$F0RGE_DIR/logs"
+mkdir -p "$LOG_DIR"
 LOG_FILE="$LOG_DIR/f0rge_$(date +'%Y%m%d_%H%M%S').log"
-LOGADD="tee -a $LOG_FILE"
-# Exit on any error
+
+
+VERBOSE=0
+for arg in "$@"; do
+  case "$arg" in
+    -v|--verbose) VERBOSE=1 ;;
+  esac
+done
+
+
+if (( VERBOSE )); then
+  # Mirror to screen and log for anything piped to $LOGADD
+  LOGADD="tee -a \"$LOG_FILE\""
+else
+  # Swallow to log only for anything piped to $LOGADD
+  LOGADD="sh -c 'cat >>\"$LOG_FILE\"'"
+fi
+
+
+# A generic runner for commands *not* already piped to $LOGADD.
+#    It captures stdout+stderr to the log and mirrors to screen if verbose.
+#    Usage: run "Description" cmd arg1 arg2 ...
+run() {
+  local desc="$1"; shift
+  # A readable, timestamped note (goes to terminal, not to log)
+  printf '[%(%F %T)T] ▶ %s\n' -1 "$desc" >/dev/tty
+
+  if (( VERBOSE )); then
+    {
+      # Mirror to screen + append to log
+      "$@" 2>&1 | tee -a "$LOG_FILE"
+      return "${PIPESTATUS[0]}"
+    }
+  else
+    {
+      # Append to log only
+      "$@" >>"$LOG_FILE" 2>&1
+    }
+  fi
+}
+
+
 # gum input --password --placeholder "Please input your password" | sudo -S sleep 1
+
 # Make sure gum is installed
 if ! command -v gum &>/dev/null; then
   # echo "Installing gum..."
