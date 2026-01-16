@@ -113,7 +113,7 @@ fi
 
 if ! command -v yay &> /dev/null; then
   styled "Installing yay..."
-  sudo ./utils/yay-install.sh 2>&1 | tee "$FORGE_DIR/yay-install.log"
+  sudo ./utils/yay-install.sh 2>&1 | tee "$F0RGE_DIR/yay-install.log"
 else
   styled "yay is already installed"
 fi
