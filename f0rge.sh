@@ -1,22 +1,18 @@
 #!/usr/bin/env bash
-
-# Exit on any error
 set -euo pipefail
-LOG_FILE="f0rge.log"
 
-if [[ "$1" == "--debug" ]]; then
-
-
-F0RGE_DIR=$(pwd)
+F0RGE_DIR="$(pwd)"
+LOG_DIR="$F0RGE_DIR/logs"
+LOG_FILE="$LOG_DIR/f0rge_$(date +'%Y%m%d_%H%M%S').log"
+LOGADD="tee -a $LOG_FILE"
+# Exit on any error
 # gum input --password --placeholder "Please input your password" | sudo -S sleep 1
-
 # Make sure gum is installed
 if ! command -v gum &>/dev/null; then
   # echo "Installing gum..."
-  sudo pacman -Syu --noconfirm
-  sudo pacman -S --needed --noconfirm gum
+  sudo pacman -Syu --noconfirm | $LOGADD
+  sudo pacman -S --needed --noconfirm gum | $LOGADD
 fi
-
 
 # Print the logo
 print_logo() {
@@ -40,27 +36,69 @@ print_logo() {
 EOF
 }
 
+spin() {
+  local title="$1"; shift
+  gum spin --title "$title" -- "$@"
+}
+
+styled() {
+  local msg="$1"
+  local color="${2:-141}"
+  gum style --foreground "$color" "$msg"
+}
+
+warn() {
+  gum style --foreground 214 "$*"
+}
+
+die() {
+  gum style --foreground 196 "$*"
+  exit 1
+}
+
+require_cmd() {
+  command -v "$1" >/dev/null 2>&1 || die "Missing required command: $1" | $LOGADD
+}
+
+
+# Function to check if a package is installed
+is_installed() {
+  pacman -Qi "$1" &> /dev/null
+}
+
+# Function to check if a package is installed
+is_group_installed() {
+  pacman -Qg "$1" &> /dev/null
+}
+
+# Function to install packages if not already installed
+install_packages() {
+  local packages=("$@")
+  local to_install=()
+
+  for pkg in "${packages[@]}"; do
+    if ! is_installed "$pkg" && ! is_group_installed "$pkg"; then
+      to_install+=("$pkg")
+    fi
+  done
+
+  if [ ${#to_install[@]} -ne 0 ]; then
+    styled "Installing: ${to_install[*]}" | $LOGADD
+    yay -S --noconfirm "${to_install[@]}" | $LOGADD
+  else
+    styled "All packages already installed"
+  fi
+}
+
 
 # Clear screen and show logo
 clear
-print_logo
+print_logo | $LOGADD
 sleep 4
-
-
-
-# Source utility functions
-if [ ! -f "utils/install-packages.sh" ]; then
-  echo "Error: install-packages.sh not found!"
-  exit 1
-fi
-
-source utils/install-packages.sh
-
 
 # Source the package list
 if [ ! -f "packages.conf" ]; then
-  echo "Error: packages.conf not found!"
-  exit 1
+  die "Error: packages.conf not found!" | $LOGADD
 fi
 
 source packages.conf
@@ -68,44 +106,30 @@ source packages.conf
 # Update the system first
 if sudo -n true 2>/dev/null; then
     # Credentials are cached, no password needed
-    gum spin --title "Updating system..." -- sudo pacman -Syu --noconfirm
+    spin "Updating system..." sudo pacman -Syu --noconfirm
 else
     # Need password
-    gum input --password --placeholder "Please input your password" | gum spin --title "Updating system..." -- sudo pacman -Syu --noconfirm
+    gum input --password --placeholder "Please input your password" | sudo -S gum spin --title "Updating system..." -- pacman -Syu --noconfirm
 fi
 
-# Install yay AUR helper if not present
 if ! command -v yay &> /dev/null; then
-  sudo -v
-
-  gum spin --title "Getting ready for yay..." -- sudo pacman -S --needed git base-devel --noconfirm
-  if [[ ! -d "yay" ]]; then
-    gum style --foreground 141 'Beautiful!'
-  else
-    gum style --foreground 141  'yay directory already exists, removing it...'
-    rm -rf yay
-  fi
-
-  gum spin --title "Cloning yay repository" -- git clone https://aur.archlinux.org/yay.git
-
-  cd yay
-  gum spin --title "Building yay.... yaaaaayyyyy" --  
-  cd ..
-  rm -rf yay
+  styled "Installing yay..."
+  sudo ./utils/yay-install.sh &>> "$F0RGE_DIR/yay-install.log"
 else
-  gum style --foreground 141 'yay is already installed'
+  styled "yay is already installed"
 fi
 
 clear
 print_logo
 
 PACKAGE_LIST=("System Utilities" "Dev Tools" "Media" "Office" "Fonts" "Flatpaks" "Services" "Dotfiles")
-
+DOTFILES_CHOICE="false"
 PACKAGE_CHOICE=$(gum choose --header "please select which packages to install:" --no-limit "${PACKAGE_LIST[@]}")
 
 gum confirm "Are you sure you want to install these packages? $(gum style --foreground 212 '' "$PACKAGE_CHOICE")" \
   --affirmative "Lets Fucking Go Dude" \
   --negative "I'm outta here homie"
+sudo -v
 
 while IFS= read -r line; do
   case "$line" in
@@ -143,16 +167,16 @@ while IFS= read -r line; do
       gum style --foreground 212 --bold "Configuring services..."
       for service in "${SERVICES[@]}"; do
         if ! systemctl is-enabled "$service" &> /dev/null; then
-          gum spin --title "Enabling $service..." -- sudo systemctl enable "$service"
+          sudo systemctl enable "$service"
         else
-          gum style --foreground 141 "$service is already enabled"
+          warn "$service is already enabled"
         fi
       done
       ;;
     
     "Dotfiles")
       gum style --foreground 212 --bold "Installing dotfiles..."
-      DOTFILES_CHOICE=true
+      DOTFILES_CHOICE="true"
       . utils/dotfiles-setup.sh
       ;;
 
@@ -161,14 +185,23 @@ done <<< "$PACKAGE_CHOICE"
 
 cd $F0RGE_DIR
 
-SSH_AGENT_CHOICE=$(gum choose --header "Do you want to enable the SSH Agent Service?" --limit 1  "Yes" "No")
-if [ "$SSH_AGENT_CHOICE" == "Yes" ]; then
-  if [ "$DOTFILES_CHOICE" == true ]; then
-    . utils/enable-ssh-agent.sh --use-zsh
-  else
-    . utils/enable-ssh-agent.sh
-  fi
+if systemctl --user --quiet is-active ssh-agent.service; then
+  styled "SSH Agent Service is already enabled"
+  SSH_AGENT_CHOICE="No"
+else
+  SSH_AGENT_CHOICE=$(gum choose \
+    --header "Do you want to enable the SSH Agent Service?" \
+    --limit 1  "Yes" "No")
 fi
 
-# Completion message <3
+if [[ "$SSH_AGENT_CHOICE" == "Yes" ]]; then
+  SSH_AGENT_FLAG="--normal"
+  
+  if [[ "$DOTFILES_CHOICE" == "true" ]]; then
+    SSH_AGENT_FLAG="--use-zsh"
+  fi
+
+  . utils/enable-ssh-agent.sh "$SSH_AGENT_FLAG"
+fi
+
 gum style --border normal --margin "1" --padding "1 2" --border-foreground 212 "Done! You may want to $(gum style --foreground 212 'reboot your system')."
