@@ -181,4 +181,16 @@ while IFS= read -r line; do
   esac
 done <<< "$PACKAGE_CHOICE"
 
+cd $F0RGE_DIR
+
+SSH_AGENT_CHOICE=$(gum choose --header "Do you want to enable the SSH Agent Service?" --limit 1  "Yes" "No")
+
+if [ "$SSH_AGENT_CHOICE" == "Yes" ]; then
+  if [ "$DOTFILES_CHOICE" == true ]; then
+    . utils/enable-ssh-agent.sh --use-zsh
+  else
+    . utils/enable-ssh-agent.sh
+  fi
+fi
+
 gum style --border normal --margin "1" --padding "1 2" --border-foreground 212 "Done! You may want to $(gum style --foreground 212 'reboot your system')."
