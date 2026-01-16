@@ -1,13 +1,12 @@
 #!/usr/bin/env bash
 
 F0RGE_DIR=$(pwd)
-LOGFILE="$FORGE_DIR/f0rge-test.log"
+LOGFILE="$HOME/f0rge-test.log"
 
 # Exit on any error
-set -eou pipefail
 (
 # gum input --password --placeholder "Please input your password" | sudo -S sleep 1
-
+set -eou pipefail
 # Make sure gum is installed
 if ! command -v gum &>/dev/null; then
   # echo "Installing gum..."
