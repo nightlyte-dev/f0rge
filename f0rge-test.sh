@@ -97,7 +97,7 @@ sleep 4
 
 # Source the package list
 if [ ! -f "packages.conf" ]; then
-  die "Error: packages.conf not found!" | tee -a "$LOGFILE"
+  die "Error: packages.conf not found!" | $TEELOG
 fi
 
 source packages.conf
@@ -105,7 +105,7 @@ source packages.conf
 # Update the system first
 if sudo -n true 2>/dev/null; then
     # Credentials are cached, no password needed
-    spin "Updating system..." -- sudo pacman -Syu --noconfirm
+    spin "Updating system..." sudo pacman -Syu --noconfirm
 else
     # Need password
     gum input --password --placeholder "Please input your password" | sudo -S gum spin --title "Updating system..." -- pacman -Syu --noconfirm
