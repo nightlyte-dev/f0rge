@@ -190,7 +190,7 @@ if [ "$SSH_AGENT_CHOICE" == "Yes" ]; then
   if [ "$DOTFILES_CHOICE" == true ]; then
     . utils/enable-ssh-agent.sh --use-zsh
   else
-    . utils/enable-ssh-agent.sh
+    . utils/enable-ssh-agent.sh --normal
   fi
 fi
 
