@@ -129,6 +129,7 @@ gum confirm "Are you sure you want to install these packages? $(gum style --fore
   --affirmative "Lets Fucking Go Dude" \
   --negative "I'm outta here homie"
 sudo -v
+DOTFILES_CHOICE=false
 while IFS= read -r line; do
   case "$line" in
     "System Utilities")
