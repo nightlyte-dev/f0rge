@@ -6,7 +6,7 @@ LOGFILE="$HOME/f0rge-test.log"
 # Exit on any error
 (
 # gum input --password --placeholder "Please input your password" | sudo -S sleep 1
-set -eou pipefail
+set -e
 # Make sure gum is installed
 if ! command -v gum &>/dev/null; then
   # echo "Installing gum..."
