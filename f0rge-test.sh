@@ -1,17 +1,16 @@
 #!/usr/bin/env bash
+set -euo pipefail
 
-F0RGE_DIR=$(pwd)
-LOGFILE="$HOME/f0rge-test.log"
-
+F0RGE_DIR="$(pwd)"
+LOGFILE="$F0RGE_DIR/f0rge-test.log"
+TEELOG="tee -a $LOGFILE"
 # Exit on any error
-(
 # gum input --password --placeholder "Please input your password" | sudo -S sleep 1
-set -e
 # Make sure gum is installed
 if ! command -v gum &>/dev/null; then
   # echo "Installing gum..."
-  sudo pacman -Syu --noconfirm
-  sudo pacman -S --needed --noconfirm gum
+  sudo pacman -Syu --noconfirm | $TEELOG
+  sudo pacman -S --needed --noconfirm gum | $TEELOG
 fi
 
 spin() {
@@ -35,7 +34,7 @@ die() {
 }
 
 require_cmd() {
-  command -v "$1" >/dev/null 2>&1 || die "Missing required command: $1"
+  command -v "$1" >/dev/null 2>&1 || die "Missing required command: $1" | $TEELOG
 }
 
 
@@ -61,8 +60,8 @@ install_packages() {
   done
 
   if [ ${#to_install[@]} -ne 0 ]; then
-    styled "Installing: ${to_install[*]}"
-    yay -S --noconfirm "${to_install[@]}"
+    styled "Installing: ${to_install[*]}" | $TEELOG
+    yay -S --noconfirm "${to_install[@]}" | $TEELOG
   else
     styled "All packages already installed"
   fi
@@ -93,12 +92,12 @@ EOF
 
 # Clear screen and show logo
 clear
-print_logo
+print_logo | $TEELOG 
 sleep 4
 
 # Source the package list
 if [ ! -f "packages.conf" ]; then
-  die "Error: packages.conf not found!"
+  die "Error: packages.conf not found!" | tee -a "$LOGFILE"
 fi
 
 source packages.conf
@@ -114,7 +113,7 @@ fi
 
 if ! command -v yay &> /dev/null; then
   styled "Installing yay..."
-  sudo utils/yay-install.sh | tee "$FORGE_DIR/yay-install.log"
+  sudo ./utils/yay-install.sh 2>&1 | tee "$FORGE_DIR/yay-install.log"
 else
   styled "yay is already installed"
 fi
@@ -181,7 +180,5 @@ while IFS= read -r line; do
 
   esac
 done <<< "$PACKAGE_CHOICE"
-
-) |& tee -a $LOGFILE
 
 gum style --border normal --margin "1" --padding "1 2" --border-foreground 212 "Done! You may want to $(gum style --foreground 212 'reboot your system')."
