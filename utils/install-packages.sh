@@ -23,7 +23,7 @@ install_packages() {
 
   if [ ${#to_install[@]} -ne 0 ]; then
     gum style --foreground 141 "Installing: ${to_install[*]}"
-    gum spin --title "Installing packages..." -- bash -c "yay -S --noconfirm ${to_install[*]} > /dev/null 2>&1"
+    yay -S --noconfirm "${to_install[@]}"
   else
     gum style --foreground 141 "All packages already installed"
   fi
